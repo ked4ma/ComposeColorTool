@@ -10,10 +10,9 @@ import android.graphics.Shader.TileMode
 import android.graphics.SweepGradient
 import android.view.MotionEvent
 import androidx.annotation.ColorInt
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.border
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
@@ -44,7 +43,7 @@ import kotlin.math.sqrt
 fun ColorPicker(modifier: Modifier = Modifier) {
     var baseColor by remember { mutableStateOf(Color.White.toArgb()) }
     var selectedColor by remember { mutableStateOf(Color.White.toArgb()) }
-    Column(modifier.fillMaxSize()) {
+    Column(modifier.fillMaxWidth().wrapContentHeight()) {
         ColorPickerPalette(
             Modifier.fillMaxWidth().aspectRatio(1F),
             updatePointer = {
@@ -151,7 +150,6 @@ fun ColorPickerValueBarCanvas(
             drawRect(0F, 0F, (width + 1).toFloat(), 1F, p)
         }.also {
             if (width > 10) {
-                println((width * xp).toInt().coerceIn(0, width))
                 val color = it.getPixel((width * xp).toInt().coerceIn(0, width), 0)
                 updatePointer(xp, color)
             }
@@ -287,24 +285,32 @@ fun ColorPickerPaletteCanvas(
             drawCircle(cx, cy, 10F, p)
         }
     }
-    Canvas(modifier = modifier.aspectRatio(1F).fillMaxSize().pointerInteropFilter {
-        val point = circlePoint(min(canvasSize.width, canvasSize.height) / 2, it.x, it.y)
-        val xp = (point.x / canvasSize.width).coerceIn(0.0F, 1.0F)
-        val yp = (point.y / canvasSize.height).coerceIn(0.0F, 1.0F)
-        val color = paletteBitmap.getPixel(
-            (width * xp).toInt().coerceIn(0, width),
-            (height * yp).toInt().coerceIn(0, height)
-        )
-        when (it.action) {
-            MotionEvent.ACTION_DOWN -> {
-                updatePointer(xp, yp, color)
+    Canvas(modifier = modifier.aspectRatio(1F).fillMaxSize().clip(CircleShape)
+        .pointerInteropFilter {
+            val (point, isInner) = circlePoint(
+                min(canvasSize.width, canvasSize.height) / 2,
+                it.x,
+                it.y
+            )
+            val xp = (point.x / canvasSize.width).coerceIn(0.0F, 1.0F)
+            val yp = (point.y / canvasSize.height).coerceIn(0.0F, 1.0F)
+            val color = paletteBitmap.getPixel(
+                (width * xp).toInt().coerceIn(0, width),
+                (height * yp).toInt().coerceIn(0, height)
+            )
+            when (it.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    if (!isInner) return@pointerInteropFilter false
+                    updatePointer(xp, yp, color)
+                    true
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    updatePointer(xp, yp, color)
+                    true
+                }
+                else -> false
             }
-            MotionEvent.ACTION_MOVE -> {
-                updatePointer(xp, yp, color)
-            }
-        }
-        true
-    }) {
+        }) {
         canvasSize = size
         drawImage(
             paletteBitmap.asImageBitmap(),
@@ -313,10 +319,10 @@ fun ColorPickerPaletteCanvas(
     }
 }
 
-fun circlePoint(radial: Float, x: Float, y: Float): PointF {
+fun circlePoint(radial: Float, x: Float, y: Float): Pair<PointF, Boolean> {
     val l = sqrt((x - radial).pow(2) + (y - radial).pow(2))
     return PointF(
         min(radial, l) * (x - radial) / l + radial,
         min(radial, l) * (y - radial) / l + radial,
-    )
+    ) to (l <= radial)
 }
