@@ -40,9 +40,12 @@ import kotlin.math.pow
 import kotlin.math.sqrt
 
 @Composable
-fun ColorPicker(modifier: Modifier = Modifier) {
-    var baseColor by remember { mutableStateOf(Color.White.toArgb()) }
-    var selectedColor by remember { mutableStateOf(Color.White.toArgb()) }
+fun ColorPicker(
+    modifier: Modifier = Modifier,
+    initColor: Int = Color.White.toArgb(),
+    onColorSelected: (Int) -> Unit = {}
+) {
+    var baseColor by remember { mutableStateOf(initColor) }
     Column(modifier.fillMaxWidth().wrapContentHeight()) {
         ColorPickerPalette(
             Modifier.fillMaxWidth().aspectRatio(1F),
@@ -54,10 +57,9 @@ fun ColorPicker(modifier: Modifier = Modifier) {
             Modifier.fillMaxWidth(),
             baseColor = baseColor,
             updatePointer = {
-                selectedColor = it
+                onColorSelected(it)
             }
         )
-        Text(text = "#%6x".format(selectedColor).toUpperCase(Locale.getDefault()))
     }
 }
 

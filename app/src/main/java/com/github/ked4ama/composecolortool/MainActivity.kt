@@ -1,6 +1,8 @@
 package com.github.ked4ama.composecolortool
 
-import android.content.Context
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -13,6 +15,7 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -20,16 +23,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.AmbientContext
-import androidx.compose.ui.platform.ContextAmbient
 import androidx.compose.ui.platform.setContent
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.viewModel
+import androidx.compose.ui.window.Dialog
 import com.github.ked4ama.composecolortool.data.ColorThemeViewModel
+import com.github.ked4ama.composecolortool.picker.ColorPicker
 import com.github.ked4ama.composecolortool.ui.ComposeColorToolTheme
+import java.util.*
 
 class MainActivity : AppCompatActivity() {
     @ExperimentalMaterialApi
@@ -59,7 +63,7 @@ fun ColorSelectorSheet(
     viewModel: ColorThemeViewModel = viewModel(),
     content: @Composable (ModalBottomSheetState) -> Unit
 ) {
-    var colors = remember(viewModel.isDarkMode) {
+    val colors = remember(viewModel.isDarkMode) {
         if (viewModel.isDarkMode) {
             viewModel.darkColors
         } else {
@@ -67,51 +71,60 @@ fun ColorSelectorSheet(
         }
     }
     val state = rememberModalBottomSheetState(ModalBottomSheetValue.Hidden)
-    ModalBottomSheetLayout(
-        modifier = modifier,
-        sheetState = state,
-        sheetContent = {
-            LazyColumn {
-                item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(text = "Dark Mode")
-                        Switch(
-                            checked = viewModel.isDarkMode,
-                            onCheckedChange = {
-                                viewModel.isDarkMode = it
-                            }
+    Column {
+        ModalBottomSheetLayout(
+            modifier = modifier,
+            sheetState = state,
+            sheetContent = {
+                LazyColumn {
+                    item {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(text = "Dark Mode")
+                            Switch(
+                                checked = viewModel.isDarkMode,
+                                onCheckedChange = {
+                                    viewModel.isDarkMode = it
+                                }
+                            )
+                        }
+                    }
+                    val setShowDialog: (Boolean, String) -> Unit = { show, key ->
+                        viewModel.showDialog = show to key
+                    }
+                    viewModel.colorKeys.forEach { (key, prop) ->
+                        colorSelectorItem(
+                            title = key,
+                            color = prop.get(colors),
+                            setShowDialog = setShowDialog
                         )
                     }
                 }
-                colorSelectorItem(title = "primary", color = colors.primary)
-                colorSelectorItem(title = "primaryVariant", color = colors.primaryVariant)
-                colorSelectorItem(title = "secondary", color = colors.secondary)
-                colorSelectorItem(title = "secondaryVariant", color = colors.secondaryVariant)
-                colorSelectorItem(title = "background", color = colors.background)
-                colorSelectorItem(title = "surface", color = colors.surface)
-                colorSelectorItem(title = "error", color = colors.error)
-                colorSelectorItem(title = "onPrimary", color = colors.onPrimary)
-                colorSelectorItem(title = "onSecondary", color = colors.onSecondary)
-                colorSelectorItem(title = "onBackground", color = colors.onBackground)
-                colorSelectorItem(title = "onSurface", color = colors.onSurface)
-                colorSelectorItem(title = "onError", color = colors.onError)
             }
+        ) {
+            content(state)
         }
-    ) {
-        content(state)
+        ColorPickerDialog(
+            initColor = (viewModel.colorKeys[viewModel.showDialog.second]?.get(colors)
+                ?: Color.White).toArgb(),
+            showDialog = viewModel.showDialog,
+            setShowDialog = { show, key ->
+                viewModel.showDialog = show to key
+            }
+        )
     }
 }
 
 private fun LazyListScope.colorSelectorItem(
     modifier: Modifier = Modifier,
     title: String,
-    color: Color
+    color: Color,
+    setShowDialog: (Boolean, String) -> Unit,
 ) {
     item {
-        ColorSelectorItemContent(modifier = modifier, title = title, color = color)
+        ColorSelectorItemContent(modifier, title, color, setShowDialog)
     }
 }
 
@@ -120,11 +133,13 @@ private fun ColorSelectorItemContent(
     modifier: Modifier = Modifier,
     title: String,
     color: Color,
+    setShowDialog: (Boolean, String) -> Unit,
 ) {
     val context = AmbientContext.current
     ListItem(
         modifier = modifier.clickable(onClick = {
             Toast.makeText(context, title, Toast.LENGTH_LONG).show()
+            setShowDialog(true, title)
         }),
         text = {
             Row {
@@ -149,6 +164,52 @@ private fun ColorSelectorItemContent(
             )
         }
     )
+}
+
+@Composable
+fun ColorPickerDialog(
+    initColor: Int,
+    showDialog: Pair<Boolean, String>,
+    setShowDialog: (Boolean, String) -> Unit
+) {
+    if (!showDialog.first) return
+    var selectedColor by remember { mutableStateOf(initColor) }
+    Dialog(onDismissRequest = {
+        setShowDialog(false, showDialog.second)
+    }) {
+        Column(
+            Modifier
+                .clip(RoundedCornerShape(8.dp))
+                .background(Color.White)
+                .fillMaxWidth()
+                .wrapContentHeight()
+        ) {
+            Text(
+                text = "#%6x".format(selectedColor).toUpperCase(Locale.getDefault()),
+                modifier = Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp),
+                fontWeight = FontWeight.Bold
+            )
+            ColorPicker(
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp),
+                initColor = initColor,
+                onColorSelected = {
+                    selectedColor = it
+                })
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(modifier = Modifier.fillMaxWidth().height(40.dp)) {
+                Button(modifier = Modifier.fillMaxSize().weight(1F), onClick = {
+                    setShowDialog(false, showDialog.second)
+                }) {
+                    Text(text = "Cancel")
+                }
+                Button(modifier = Modifier.fillMaxSize().weight(1F), onClick = {
+
+                }) {
+                    Text(text = "OK")
+                }
+            }
+        }
+    }
 }
 
 @Composable
