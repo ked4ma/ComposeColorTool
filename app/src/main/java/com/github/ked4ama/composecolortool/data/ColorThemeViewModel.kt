@@ -5,13 +5,14 @@ import androidx.compose.material.darkColors
 import androidx.compose.material.lightColors
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import com.github.ked4ama.composecolortool.ui.purple200
 import com.github.ked4ama.composecolortool.ui.purple500
 import com.github.ked4ama.composecolortool.ui.purple700
 import com.github.ked4ama.composecolortool.ui.teal200
+import kotlin.reflect.KParameter
 
 class ColorThemeViewModel : ViewModel() {
     val colorKeys = linkedMapOf(
@@ -28,14 +29,14 @@ class ColorThemeViewModel : ViewModel() {
         "onSurface" to Colors::onSurface,
         "onError" to Colors::onError,
     )
-    var lightColors by mutableStateOf(
+    private var lightColors by mutableStateOf(
         lightColors(
             primary = purple500,
             primaryVariant = purple700,
             secondary = teal200
         )
     )
-    var darkColors by mutableStateOf(
+    private var darkColors by mutableStateOf(
         darkColors(
             primary = purple200,
             primaryVariant = purple700,
@@ -44,4 +45,27 @@ class ColorThemeViewModel : ViewModel() {
     )
     var isDarkMode by mutableStateOf(false)
     var showDialog by mutableStateOf(false to "")
+
+    fun getColors(isDarkMode: Boolean) = if (isDarkMode) darkColors else lightColors
+    fun getColors() = getColors(isDarkMode)
+    fun setColor(key: String, color: Int) {
+        val colors = getColors(isDarkMode)
+        val func = colors::class.members.first { it.name == "copy" }
+        val params = mutableMapOf<KParameter, Any?>()
+        func.typeParameters.forEach {
+            println(it)
+        }
+        func.parameters.forEach {
+            when {
+                it.kind == KParameter.Kind.INSTANCE -> params[it] = colors
+                it.name == key -> params[it] = Color(color)
+            }
+        }
+        val nextColors = func.callBy(params) as? Colors ?: return
+        if (isDarkMode) {
+            darkColors = nextColors
+        } else {
+            lightColors = nextColors
+        }
+    }
 }
