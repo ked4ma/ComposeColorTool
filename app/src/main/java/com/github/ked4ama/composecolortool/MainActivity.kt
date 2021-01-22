@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.DrawerValue
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
@@ -14,6 +15,8 @@ import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.rememberDrawerState
+import androidx.compose.material.rememberScaffoldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -27,8 +30,11 @@ import androidx.compose.ui.viewinterop.viewModel
 import com.github.ked4ama.composecolortool.data.ColorThemeViewModel
 import com.github.ked4ama.composecolortool.ui.ComposeColorToolTheme
 import com.github.ked4ama.composecolortool.view.ColorSelectorSheet
+import com.github.ked4ama.composecolortool.view.DrawerRow
 import com.github.ked4ama.composecolortool.view.Pager
 import com.github.ked4ama.composecolortool.view.PagerState
+import com.github.ked4ama.composecolortool.view.template.ShowCase1
+import com.github.ked4ama.composecolortool.view.template.showCaseSize
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -47,14 +53,20 @@ class MainActivity : AppCompatActivity() {
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 private fun MainScaffold(state: ModalBottomSheetState? = null) {
+    val scaffoldState = rememberScaffoldState(
+        rememberDrawerState(initialValue = DrawerValue.Closed)
+    )
     Scaffold(
+        scaffoldState = scaffoldState,
         topBar = {
             TopAppBar(
                 title = {
                     Text(text = stringResource(id = R.string.app_name))
                 },
                 navigationIcon = {
-                    Icon(Icons.Default.Menu)
+                    IconButton(onClick = { scaffoldState.drawerState.open() }) {
+                        Icon(Icons.Default.Menu)
+                    }
                 },
                 actions = {
                     IconButton(onClick = { state?.show() }) {
@@ -66,16 +78,33 @@ private fun MainScaffold(state: ModalBottomSheetState? = null) {
                 }
             )
         },
+        drawerContent = {
+            // TODO use nav controller
+            DrawerRow(title = "Tool", selected = true, onClick = {})
+            DrawerRow(title = "Licenses", selected = false, onClick = {})
+//            Row(modifier = Modifier.weight(1F)) {
+//                ColorDescription(
+//                    modifier = Modifier.align(Alignment.Bottom),
+//                    ColorDescriptionData("primary", 1F, MaterialTheme.colors.primary),
+//                    ColorDescriptionData("primary", 0.12F, MaterialTheme.colors.primary),
+//                    ColorDescriptionData("onSurface", 1F, MaterialTheme.colors.onSurface),
+//                )
+//            }
+        }
     ) {
         val clock = AmbientAnimationClock.current
         val pagerState = remember(clock) { PagerState(clock) }
-        pagerState.maxPage = 3
+        pagerState.maxPage = showCaseSize() - 1
 
         Pager(
             state = pagerState,
             modifier = Modifier.fillMaxSize()
         ) {
-            Text(text = "text$page", modifier = Modifier.fillMaxSize())
+            if (page == 0) {
+                ShowCase1(modifier = Modifier.fillMaxSize())
+            } else {
+                Text(text = "text$page", modifier = Modifier.fillMaxSize())
+            }
         }
     }
 }
