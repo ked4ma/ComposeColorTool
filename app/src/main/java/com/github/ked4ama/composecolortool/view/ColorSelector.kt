@@ -23,7 +23,7 @@ import androidx.compose.ui.viewinterop.viewModel
 import com.github.ked4ama.composecolortool.data.ColorThemeViewModel
 import com.github.ked4ama.composecolortool.picker.ColorPickerDialog
 
-@ExperimentalMaterialApi
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun ColorSelectorSheet(
     modifier: Modifier = Modifier,
