@@ -51,6 +51,7 @@ class MainActivity : AppCompatActivity() {
             ComposeColorToolTheme(darkTheme = viewModel.isDarkMode, viewModel = viewModel) {
                 ColorSelectorSheet(viewModel = viewModel) { state ->
                     MainScaffold(state) {
+                        // TODO refactor
                         this.startActivity(
                             Intent(this, OssLicensesMenuActivity::class.java)
                         )
