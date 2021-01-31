@@ -1,9 +1,13 @@
 package com.github.ked4ama.composecolortool
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.DrawerValue
 import androidx.compose.material.ExperimentalMaterialApi
@@ -12,6 +16,7 @@ import androidx.compose.material.IconButton
 import androidx.compose.material.ModalBottomSheetState
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
+import androidx.compose.material.TextButton
 import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
@@ -19,6 +24,7 @@ import androidx.compose.material.rememberDrawerState
 import androidx.compose.material.rememberScaffoldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.AmbientAnimationClock
 import androidx.compose.ui.platform.setContent
@@ -33,8 +39,9 @@ import com.github.ked4ama.composecolortool.view.ColorSelectorSheet
 import com.github.ked4ama.composecolortool.view.DrawerRow
 import com.github.ked4ama.composecolortool.view.Pager
 import com.github.ked4ama.composecolortool.view.PagerState
-import com.github.ked4ama.composecolortool.view.template.ShowCase1
+import com.github.ked4ama.composecolortool.view.template.ShowCase
 import com.github.ked4ama.composecolortool.view.template.showCaseSize
+import com.google.android.gms.oss.licenses.OssLicensesMenuActivity
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -43,7 +50,11 @@ class MainActivity : AppCompatActivity() {
             val viewModel: ColorThemeViewModel = viewModel()
             ComposeColorToolTheme(darkTheme = viewModel.isDarkMode, viewModel = viewModel) {
                 ColorSelectorSheet(viewModel = viewModel) { state ->
-                    MainScaffold(state)
+                    MainScaffold(state) {
+                        this.startActivity(
+                            Intent(this, OssLicensesMenuActivity::class.java)
+                        )
+                    }
                 }
             }
         }
@@ -52,7 +63,10 @@ class MainActivity : AppCompatActivity() {
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-private fun MainScaffold(state: ModalBottomSheetState? = null) {
+private fun MainScaffold(
+    state: ModalBottomSheetState? = null,
+    goToLicense: (() -> Unit)? = null
+) {
     val scaffoldState = rememberScaffoldState(
         rememberDrawerState(initialValue = DrawerValue.Closed)
     )
@@ -65,7 +79,7 @@ private fun MainScaffold(state: ModalBottomSheetState? = null) {
                 },
                 navigationIcon = {
                     IconButton(onClick = { scaffoldState.drawerState.open() }) {
-                        Icon(Icons.Default.Menu)
+                        Icon(imageVector = Icons.Default.Menu)
                     }
                 },
                 actions = {
@@ -81,15 +95,29 @@ private fun MainScaffold(state: ModalBottomSheetState? = null) {
         drawerContent = {
             // TODO use nav controller
             DrawerRow(title = "Tool", selected = true, onClick = {})
-            DrawerRow(title = "Licenses", selected = false, onClick = {})
-//            Row(modifier = Modifier.weight(1F)) {
+            Row(modifier = Modifier.weight(1F)) {
+                TextButton(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.Bottom),
+                    onClick = {
+                        goToLicense?.invoke()
+                    }) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp)
+                    ) {
+                        Text(text = "Licenses")
+                    }
+                }
 //                ColorDescription(
 //                    modifier = Modifier.align(Alignment.Bottom),
 //                    ColorDescriptionData("primary", 1F, MaterialTheme.colors.primary),
 //                    ColorDescriptionData("primary", 0.12F, MaterialTheme.colors.primary),
 //                    ColorDescriptionData("onSurface", 1F, MaterialTheme.colors.onSurface),
 //                )
-//            }
+            }
         }
     ) {
         val clock = AmbientAnimationClock.current
@@ -100,11 +128,7 @@ private fun MainScaffold(state: ModalBottomSheetState? = null) {
             state = pagerState,
             modifier = Modifier.fillMaxSize()
         ) {
-            if (page == 0) {
-                ShowCase1(modifier = Modifier.fillMaxSize())
-            } else {
-                Text(text = "text$page", modifier = Modifier.fillMaxSize())
-            }
+            ShowCase(page)
         }
     }
 }
