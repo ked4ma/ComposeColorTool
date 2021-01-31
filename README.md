@@ -16,8 +16,8 @@ Want to know which color settings actually affect to which views.
 - [ ] fix color of color palette and bottom sheet
   - not to be affected by color settings
 - [ ] add more view templates
-- [ ] add license page
-  - use nav controller
+- [x] add license page
+  - [ ] use nav controller
 
 ## License
 ```
