@@ -27,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.AmbientAnimationClock
+import androidx.compose.ui.platform.AmbientContext
 import androidx.compose.ui.platform.setContent
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
@@ -50,12 +51,7 @@ class MainActivity : AppCompatActivity() {
             val viewModel: ColorThemeViewModel = viewModel()
             ComposeColorToolTheme(darkTheme = viewModel.isDarkMode, viewModel = viewModel) {
                 ColorSelectorSheet(viewModel = viewModel) { state ->
-                    MainScaffold(state) {
-                        // TODO refactor
-                        this.startActivity(
-                            Intent(this, OssLicensesMenuActivity::class.java)
-                        )
-                    }
+                    MainScaffold(state)
                 }
             }
         }
@@ -64,10 +60,7 @@ class MainActivity : AppCompatActivity() {
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-private fun MainScaffold(
-    state: ModalBottomSheetState? = null,
-    goToLicense: (() -> Unit)? = null
-) {
+private fun MainScaffold(state: ModalBottomSheetState? = null) {
     val scaffoldState = rememberScaffoldState(
         rememberDrawerState(initialValue = DrawerValue.Closed)
     )
@@ -94,6 +87,8 @@ private fun MainScaffold(
             )
         },
         drawerContent = {
+            val context = AmbientContext.current
+
             // TODO use nav controller
             DrawerRow(title = "Tool", selected = true, onClick = {})
             Row(modifier = Modifier.weight(1F)) {
@@ -102,7 +97,7 @@ private fun MainScaffold(
                         .fillMaxWidth()
                         .align(Alignment.Bottom),
                     onClick = {
-                        goToLicense?.invoke()
+                        context.startActivity(Intent(context, OssLicensesMenuActivity::class.java))
                     }) {
                     Row(
                         modifier = Modifier
