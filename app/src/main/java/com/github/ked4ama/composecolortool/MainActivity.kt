@@ -5,7 +5,6 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -26,7 +25,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.AmbientAnimationClock
 import androidx.compose.ui.platform.AmbientContext
 import androidx.compose.ui.platform.setContent
 import androidx.compose.ui.res.stringResource
@@ -38,10 +36,8 @@ import com.github.ked4ama.composecolortool.data.ColorThemeViewModel
 import com.github.ked4ama.composecolortool.ui.ComposeColorToolTheme
 import com.github.ked4ama.composecolortool.view.ColorSelectorSheet
 import com.github.ked4ama.composecolortool.view.DrawerRow
-import com.github.ked4ama.composecolortool.view.Pager
-import com.github.ked4ama.composecolortool.view.PagerState
+import com.github.ked4ama.composecolortool.view.template.Case
 import com.github.ked4ama.composecolortool.view.template.ShowCase
-import com.github.ked4ama.composecolortool.view.template.showCaseSize
 import com.google.android.gms.oss.licenses.OssLicensesMenuActivity
 
 class MainActivity : AppCompatActivity() {
@@ -51,7 +47,7 @@ class MainActivity : AppCompatActivity() {
             val viewModel: ColorThemeViewModel = viewModel()
             ComposeColorToolTheme(darkTheme = viewModel.isDarkMode, viewModel = viewModel) {
                 ColorSelectorSheet(viewModel = viewModel) { state ->
-                    MainScaffold(state)
+                    MainScaffold(viewModel, state)
                 }
             }
         }
@@ -60,10 +56,14 @@ class MainActivity : AppCompatActivity() {
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-private fun MainScaffold(state: ModalBottomSheetState? = null) {
+private fun MainScaffold(
+    viewModel: ColorThemeViewModel,
+    state: ModalBottomSheetState? = null
+) {
     val scaffoldState = rememberScaffoldState(
         rememberDrawerState(initialValue = DrawerValue.Closed)
     )
+    val case = remember(viewModel.caseState) { viewModel.caseState }
     Scaffold(
         scaffoldState = scaffoldState,
         topBar = {
@@ -90,7 +90,15 @@ private fun MainScaffold(state: ModalBottomSheetState? = null) {
             val context = AmbientContext.current
 
             // TODO use nav controller
-            DrawerRow(title = "Tool", selected = true, onClick = {})
+            DrawerRow(title = "Cards", selected = case == Case.CARDS, onClick = {
+                viewModel.caseState = Case.CARDS
+            })
+            DrawerRow(title = "Texts", selected = case == Case.TEXTS, onClick = {
+                viewModel.caseState = Case.TEXTS
+            })
+            DrawerRow(title = "Buttons", selected = case == Case.BUTTONS, onClick = {
+                viewModel.caseState = Case.BUTTONS
+            })
             Row(modifier = Modifier.weight(1F)) {
                 TextButton(
                     modifier = Modifier
@@ -116,16 +124,7 @@ private fun MainScaffold(state: ModalBottomSheetState? = null) {
             }
         }
     ) {
-        val clock = AmbientAnimationClock.current
-        val pagerState = remember(clock) { PagerState(clock) }
-        pagerState.maxPage = showCaseSize() - 1
-
-        Pager(
-            state = pagerState,
-            modifier = Modifier.fillMaxSize()
-        ) {
-            ShowCase(page)
-        }
+        ShowCase(case)
     }
 }
 
@@ -133,6 +132,6 @@ private fun MainScaffold(state: ModalBottomSheetState? = null) {
 @Composable
 fun DefaultPreview() {
     ComposeColorToolTheme {
-        MainScaffold()
+        MainScaffold(ColorThemeViewModel())
     }
 }

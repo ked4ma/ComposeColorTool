@@ -21,7 +21,15 @@ fun DrawerRow(title: String, selected: Boolean, onClick: () -> Unit) {
     } else {
         MaterialTheme.colors.onSurface
     }
-    ListItem(modifier = Modifier.clickable(onClick = onClick).background(background)) {
+    ListItem(
+        modifier = Modifier
+            .clickable(onClick = {
+                if (!selected) {
+                    onClick()
+                }
+            })
+            .background(background)
+    ) {
         Text(text = title, color = textColor)
     }
 }

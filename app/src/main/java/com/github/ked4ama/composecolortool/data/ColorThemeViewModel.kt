@@ -12,6 +12,7 @@ import com.github.ked4ama.composecolortool.ui.purple200
 import com.github.ked4ama.composecolortool.ui.purple500
 import com.github.ked4ama.composecolortool.ui.purple700
 import com.github.ked4ama.composecolortool.ui.teal200
+import com.github.ked4ama.composecolortool.view.template.Case
 import kotlin.reflect.KParameter
 
 class ColorThemeViewModel : ViewModel() {
@@ -52,9 +53,6 @@ class ColorThemeViewModel : ViewModel() {
         val colors = getColors(isDarkMode)
         val func = colors::class.members.first { it.name == "copy" }
         val params = mutableMapOf<KParameter, Any?>()
-        func.typeParameters.forEach {
-            println(it)
-        }
         func.parameters.forEach {
             when {
                 it.kind == KParameter.Kind.INSTANCE -> params[it] = colors
@@ -68,4 +66,6 @@ class ColorThemeViewModel : ViewModel() {
             lightColors = nextColors
         }
     }
+
+    var caseState by mutableStateOf(Case.CARDS)
 }
