@@ -30,6 +30,11 @@ class ColorThemeViewModel : ViewModel() {
         "onSurface" to Colors::onSurface,
         "onError" to Colors::onError,
     )
+    val defaultLightColors = lightColors(
+        primary = purple500,
+        primaryVariant = purple700,
+        secondary = teal200
+    )
     private var lightColors by mutableStateOf(
         lightColors(
             primary = purple500,
