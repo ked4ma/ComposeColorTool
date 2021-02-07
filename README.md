@@ -13,7 +13,7 @@ Want to know which color settings actually affect to which views.
 | ![image4](./public/images/4.png) | ![image5](./public/images/5.png) | ![image6](./public/images/6.png) |
 
 ## TODO
-- [ ] fix color of color palette and bottom sheet
+- [x] fix color of color palette and bottom sheet
   - not to be affected by color settings
 - [ ] add more view templates
 - [x] add license page
