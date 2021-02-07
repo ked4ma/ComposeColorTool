@@ -1,6 +1,5 @@
 package com.github.ked4ama.composecolortool.view
 
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -21,6 +20,7 @@ import androidx.compose.material.ModalBottomSheetLayout
 import androidx.compose.material.ModalBottomSheetState
 import androidx.compose.material.ModalBottomSheetValue
 import androidx.compose.material.Switch
+import androidx.compose.material.SwitchDefaults
 import androidx.compose.material.Text
 import androidx.compose.material.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -30,7 +30,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.platform.AmbientContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -50,19 +49,28 @@ fun ColorSelectorSheet(
     val colors = remember(viewModel.getColors()) { viewModel.getColors() }
     val state = rememberModalBottomSheetState(ModalBottomSheetValue.Hidden)
     Column {
+        val defaultColors = viewModel.defaultLightColors
         ModalBottomSheetLayout(
             modifier = modifier,
             sheetState = state,
+            sheetBackgroundColor = defaultColors.surface,
             sheetContent = {
                 LazyColumn {
                     item {
                         Row(
-                            modifier = Modifier.fillMaxWidth().padding(16.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text(text = "Dark Mode")
+                            Text(text = "Dark Mode", color = defaultColors.onSurface)
                             Switch(
                                 checked = viewModel.isDarkMode,
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = defaultColors.secondaryVariant,
+                                    uncheckedThumbColor = defaultColors.surface,
+                                    uncheckedTrackColor = defaultColors.onSurface,
+                                ),
                                 onCheckedChange = {
                                     viewModel.isDarkMode = it
                                 }
@@ -76,6 +84,7 @@ fun ColorSelectorSheet(
                         colorSelectorItem(
                             title = key,
                             color = prop.get(colors),
+                            viewModel = viewModel,
                             setShowDialog = setShowDialog
                         )
                     }
@@ -102,10 +111,11 @@ private fun LazyListScope.colorSelectorItem(
     modifier: Modifier = Modifier,
     title: String,
     color: Color,
+    viewModel: ColorThemeViewModel,
     setShowDialog: (Boolean, String) -> Unit,
 ) {
     item {
-        ColorSelectorItemContent(modifier, title, color, setShowDialog)
+        ColorSelectorItemContent(modifier, title, color, viewModel, setShowDialog)
     }
 }
 
@@ -114,24 +124,26 @@ private fun ColorSelectorItemContent(
     modifier: Modifier = Modifier,
     title: String,
     color: Color,
+    viewModel: ColorThemeViewModel,
     setShowDialog: (Boolean, String) -> Unit,
 ) {
-    val context = AmbientContext.current
+    val defaultColors = viewModel.defaultLightColors
     ListItem(
         modifier = modifier.clickable(onClick = {
-            Toast.makeText(context, title, Toast.LENGTH_LONG).show()
             setShowDialog(true, title)
         }),
         text = {
             Row {
                 Text(
                     "#%6X".format(color.toArgb()),
-                    fontFamily = FontFamily.Monospace
+                    fontFamily = FontFamily.Monospace,
+                    color = defaultColors.onSurface
                 )
                 Text(
                     modifier = Modifier.padding(start = 8.dp),
                     fontWeight = FontWeight.Bold,
-                    text = title
+                    text = title,
+                    color = defaultColors.onSurface
                 )
             }
         },
@@ -188,7 +200,9 @@ private fun ColorDescriptionItem(
             )
         }
         Box(
-            Modifier.align(Alignment.CenterVertically).padding(start = 8.dp),
+            Modifier
+                .align(Alignment.CenterVertically)
+                .padding(start = 8.dp),
             contentAlignment = Alignment.CenterStart
         ) {
             Row {
